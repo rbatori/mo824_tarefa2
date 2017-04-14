@@ -3,6 +3,7 @@ package problems.qbf.solvers;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import metaheuristics.tabusearch.AbstractTS;
 import problems.qbf.QBF_Inverse;
@@ -173,11 +174,65 @@ public class TS_QBF extends AbstractTS<Integer> {
 		} else {
 			TL.add(fake);
 		}
-		ObjFunction.evaluate(incumbentSol);
+		//ObjFunction.evaluate(incumbentSol);
+		repair();
 		
 		return null;
 	}
 
+	private void repair() {
+        randomizedSimplestRepair();
+        ObjFunction.evaluate(incumbentSol);
+    }
+	
+	private void randomizedSimplestRepair() {
+        double removeCandIndexProb = 0;
+        int removeCandIndex = 0;
+        Solution<Integer> incumbentSolCopy = new Solution<Integer>(incumbentSol);
+        sortSolution(incumbentSolCopy);
+        
+        /*Simplest repair: remove the right element that is incorrect*/
+        for(int index = 0; index < incumbentSolCopy.size(); index++) {
+            if(index < (incumbentSolCopy.size() - 1) && applyAdjacentConstraint(incumbentSolCopy, index)) {
+                removeCandIndexProb = rng.nextDouble();
+                removeCandIndex = Double.compare(removeCandIndexProb, 0.5) <= 0 ? index : index + 1;
+                
+                CL.add(incumbentSolCopy.get(removeCandIndex));
+                
+                removeElementByValue(incumbentSol, incumbentSolCopy.get(removeCandIndex));
+                incumbentSolCopy.remove(removeCandIndex);
+                
+                if(removeCandIndex == index) {
+                    index--;
+                }
+            }
+        }
+    }
+	
+	private void removeElementByValue(Solution<Integer> solution, int targetValue) {
+        for(int index = 0; index < solution.size(); index++) {
+            if(solution.get(index).intValue() == targetValue) {
+                solution.remove(index);
+                break;
+            }
+        }
+    }
+	
+	private boolean applyAdjacentConstraint(Solution<Integer> currentSolution, int currentIndex) {
+        return currentSolution.get(currentIndex) + 1 == currentSolution.get(currentIndex+1);
+    }
+	
+	private void sortSolution(Solution<Integer> sol) {
+        sol.sort(new Comparator<Integer>() {
+            @Override
+            public int compare(Integer element1, Integer element2)
+            {
+
+                return  element1.compareTo(element2);
+            }
+        });
+    }
+	
 	/**
 	 * A main method used for testing the TS metaheuristic.
 	 * 
@@ -185,7 +240,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	public static void main(String[] args) throws IOException {
 
 		long startTime = System.currentTimeMillis();
-		TS_QBF tabusearch = new TS_QBF(20, 10000, "instances/qbf100");
+		TS_QBF tabusearch = new TS_QBF(20, 10000, "instances/qbf040");
 		Solution<Integer> bestSol = tabusearch.solve();
 		System.out.println("maxVal = " + bestSol);
 		long endTime   = System.currentTimeMillis();
