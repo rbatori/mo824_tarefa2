@@ -22,6 +22,8 @@ import solutions.Solution;
 public class TS_QBF extends AbstractTS<Integer> {
 	
 	private final Integer fake = new Integer(-1);
+	
+	private ArrayDeque<Integer> tlRemovedRandomItens;
 
 	/**
 	 * Constructor for the TS_QBF class. An inverse QBF objective function is
@@ -39,6 +41,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	 */
 	public TS_QBF(Integer tenure, Integer iterations, String filename) throws IOException {
 		super(new QBF_Inverse(filename), tenure, iterations);
+		tlRemovedRandomItens = new ArrayDeque<>();
 	}
 
 	/* (non-Javadoc)
@@ -125,7 +128,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 		// Evaluate insertions
 		for (Integer candIn : CL) {
 			Double deltaCost = ObjFunction.evaluateInsertionCost(candIn, incumbentSol);
-			if (!TL.contains(candIn) || incumbentSol.cost+deltaCost < bestSol.cost) {
+			if (evaluationAllowed(candIn, deltaCost)) {
 				if (deltaCost < minDeltaCost) {
 					minDeltaCost = deltaCost;
 					bestCandIn = candIn;
@@ -136,7 +139,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 		// Evaluate removals
 		for (Integer candOut : incumbentSol) {
 			Double deltaCost = ObjFunction.evaluateRemovalCost(candOut, incumbentSol);
-			if (!TL.contains(candOut) || incumbentSol.cost+deltaCost < bestSol.cost) {
+			if (evaluationAllowed(candOut, deltaCost)) {
 				if (deltaCost < minDeltaCost) {
 					minDeltaCost = deltaCost;
 					bestCandIn = null;
@@ -148,7 +151,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 		for (Integer candIn : CL) {
 			for (Integer candOut : incumbentSol) {
 				Double deltaCost = ObjFunction.evaluateExchangeCost(candIn, candOut, incumbentSol);
-				if ((!TL.contains(candIn) && !TL.contains(candOut)) || incumbentSol.cost+deltaCost < bestSol.cost) {
+				if (evaluationAllowed(candIn, candOut, deltaCost)) {
 					if (deltaCost < minDeltaCost) {
 						minDeltaCost = deltaCost;
 						bestCandIn = candIn;
@@ -175,11 +178,20 @@ public class TS_QBF extends AbstractTS<Integer> {
 			TL.add(fake);
 		}
 		//ObjFunction.evaluate(incumbentSol);
+		tlRemovedRandomItens.clear();
 		repair();
 		
 		return null;
 	}
 
+	private boolean evaluationAllowed(Integer candidate, Double deltaCost) {
+	    return !(TL.contains(candidate) || tlRemovedRandomItens.contains(candidate)); //|| incumbentSol.cost+deltaCost < bestSol.cost;
+	}
+	
+	private boolean evaluationAllowed(Integer candIn, Integer candOut, Double deltaCost) {
+        return evaluationAllowed(candIn, deltaCost) && evaluationAllowed(candOut, deltaCost);
+    }
+	
 	private void repair() {
         randomizedSimplestRepair();
         ObjFunction.evaluate(incumbentSol);
@@ -197,7 +209,13 @@ public class TS_QBF extends AbstractTS<Integer> {
                 removeCandIndexProb = rng.nextDouble();
                 removeCandIndex = Double.compare(removeCandIndexProb, 0.5) <= 0 ? index : index + 1;
                 
-                CL.add(incumbentSolCopy.get(removeCandIndex));
+                int indexElement = incumbentSol.indexOf(incumbentSolCopy.get(removeCandIndex));
+                Integer element = incumbentSol.get(indexElement);
+                CL.add(element);
+                
+                if(!tlRemovedRandomItens.contains(element)) {
+                    tlRemovedRandomItens.add(incumbentSol.get(indexElement));
+                }
                 
                 removeElementByValue(incumbentSol, incumbentSolCopy.get(removeCandIndex));
                 incumbentSolCopy.remove(removeCandIndex);
@@ -240,7 +258,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	public static void main(String[] args) throws IOException {
 
 		long startTime = System.currentTimeMillis();
-		TS_QBF tabusearch = new TS_QBF(20, 10000, "instances/qbf040");
+		TS_QBF tabusearch = new TS_QBF(10, 10000, "instances/qbf060");
 		Solution<Integer> bestSol = tabusearch.solve();
 		System.out.println("maxVal = " + bestSol);
 		long endTime   = System.currentTimeMillis();
