@@ -146,9 +146,15 @@ public abstract class AbstractTS<E> {
 	
 	public abstract void updateIntensificationByRestartCounter();
 	
-	public abstract void resetIntensificationByRestartCounter();
+	public abstract void resetIntensificationStructures();
 	
 	public abstract void setFixedComponentsIntensification();
+	
+	public void initIntensificationByRestart() {
+	    incumbentSol = new Solution<E>(bestSol);
+	    updateCL();
+	    setFixedComponentsIntensification();
+	}
 
 	/**
 	 * Constructor for the AbstractTS class.
@@ -191,7 +197,7 @@ public abstract class AbstractTS<E> {
 
 			Double maxCost = Double.NEGATIVE_INFINITY, minCost = Double.POSITIVE_INFINITY;
 			incumbentCost = incumbentSol.cost;
-			updateCL();
+			//updateCL();
 
 			/*
 			 * Explore all candidate elements to enter the solution, saving the
@@ -242,32 +248,31 @@ public abstract class AbstractTS<E> {
 		constructiveHeuristic();
 		TL = makeTL();
 		for (int i = 0; i < iterations; i++) {
-		    if(statusIntensificationProcess == STATUS.DEACTIVE) {
-		        countIterationsStartIntensification++;  
-		    } else {
-		        countIterationsOfIntensification++;
-		    }
-		    
 			neighborhoodMove();
 			if (bestSol.cost > incumbentSol.cost) {
 				bestSol = new Solution<E>(incumbentSol);
 				if (verbose)
 					System.out.println("(Iter. " + i + ") BestSol = " + bestSol);
 			}
-			updateIntensificationByRestartCounter();
+			if(statusIntensificationProcess == STATUS.DEACTIVE) {
+                countIterationsStartIntensification++;
+                updateIntensificationByRestartCounter();
+            } else {
+                countIterationsOfIntensification++;
+            }
 			
 			if(countIterationsStartIntensification == numberOfIterationsToStartIntensification) {
 			    //start intensification process
 			    statusIntensificationProcess = STATUS.ACTIVE;
 			    countIterationsStartIntensification = 0;
-			    setFixedComponentsIntensification();
+			    initIntensificationByRestart();
 			}
 			
 			if(countIterationsOfIntensification == numberOfIterationsOfIntensification) {
                 //end intensification process
                 statusIntensificationProcess = STATUS.DEACTIVE;
                 countIterationsOfIntensification = 0;
-                resetIntensificationByRestartCounter();
+                resetIntensificationStructures();
             }
 		}
 

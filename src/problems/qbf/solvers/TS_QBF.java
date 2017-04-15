@@ -35,7 +35,9 @@ public class TS_QBF extends AbstractTS<Integer> {
 	
 	private static final int INTERATIONS_OF_INTENSIFICATION = 400;
 	
-	private static final int PERCENTAGE_FIXED_ITENS = 25;
+	private static final int PERCENTAGE_FIXED_ITENS = 20;
+	
+	private enum OperationNeighborhood {INSERT, REMOVE, EXCHANGE};
 	
 	private ArrayDeque<Integer> tlRemovedRandomItens;
 	
@@ -113,9 +115,8 @@ public class TS_QBF extends AbstractTS<Integer> {
 	 */
 	@Override
 	public void updateCL() {
-
-		// do nothing
-
+	    CL = makeCL();
+	    CL.removeAll(incumbentSol);
 	}
 
 	/**
@@ -145,11 +146,11 @@ public class TS_QBF extends AbstractTS<Integer> {
 		Integer bestCandIn = null, bestCandOut = null;
 
 		minDeltaCost = Double.POSITIVE_INFINITY;
-		updateCL();
+		//updateCL();
 		// Evaluate insertions
 		for (Integer candIn : CL) {
 			Double deltaCost = ObjFunction.evaluateInsertionCost(candIn, incumbentSol);
-			if (evaluationAllowed(candIn, deltaCost)) {
+			if (evaluationAllowed(candIn, deltaCost, OperationNeighborhood.INSERT)) {
 				if (deltaCost < minDeltaCost) {
 					minDeltaCost = deltaCost;
 					bestCandIn = candIn;
@@ -160,7 +161,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 		// Evaluate removals
 		for (Integer candOut : incumbentSol) {
 			Double deltaCost = ObjFunction.evaluateRemovalCost(candOut, incumbentSol);
-			if (evaluationAllowed(candOut, deltaCost)) {
+			if (evaluationAllowed(candOut, deltaCost, OperationNeighborhood.REMOVE)) {
 				if (deltaCost < minDeltaCost) {
 					minDeltaCost = deltaCost;
 					bestCandIn = null;
@@ -206,7 +207,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	}
 	
 	public void updateIntensificationByRestartCounter() {
-	    for(Integer element : bestSol) {
+	    for(Integer element : incumbentSol) {
 	        Integer elementCount = intensificationByRestartCounter.get(element.intValue());
 	        
 	        if(elementCount == null) {
@@ -217,8 +218,9 @@ public class TS_QBF extends AbstractTS<Integer> {
 	    }
 	}
 	
-	public void resetIntensificationByRestartCounter() {
+	public void resetIntensificationStructures() {
 	    this.intensificationByRestartCounter.clear();
+	    this.fixedVariablesIntensification.clear();
 	}
 	
 	public void setFixedComponentsIntensification() {
@@ -239,7 +241,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	    numberFixedElements = computeNumberFixedElements();
 	    Iterator<Integer> iterator = orderedVariablesOcurrence.keySet().iterator();
 	    while(iterator.hasNext() && index < numberFixedElements) {
-	        fixedVariablesIntensification.add(iterator.next());
+	        fixedVariablesIntensification.add(iterator.next().intValue());
 	        index++;
 	    }
 	}
@@ -248,12 +250,18 @@ public class TS_QBF extends AbstractTS<Integer> {
 	    return (int) Math.round(intensificationByRestartCounter.size() * ((double)PERCENTAGE_FIXED_ITENS/100));
 	}
 
-	private boolean evaluationAllowed(Integer candidate, Double deltaCost) {
+	private boolean evaluationAllowed(Integer candidate, Double deltaCost, OperationNeighborhood operation) {
+	    if(statusIntensificationProcess == STATUS.ACTIVE 
+	            && operation == OperationNeighborhood.REMOVE
+	            && fixedVariablesIntensification.contains(candidate.intValue())) {
+	        return false;
+	    }
+	    
 	    return !(TL.contains(candidate) || tlRemovedRandomItens.contains(candidate)); //|| incumbentSol.cost+deltaCost < bestSol.cost;
 	}
 	
 	private boolean evaluationAllowed(Integer candIn, Integer candOut, Double deltaCost) {
-        return evaluationAllowed(candIn, deltaCost) && evaluationAllowed(candOut, deltaCost);
+        return evaluationAllowed(candIn, deltaCost, OperationNeighborhood.INSERT) && evaluationAllowed(candOut, deltaCost, OperationNeighborhood.REMOVE);
     }
 	
 	private void repair() {
@@ -322,7 +330,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	public static void main(String[] args) throws IOException {
 
 		long startTime = System.currentTimeMillis();
-		TS_QBF tabusearch = new TS_QBF(10, 10000, "instances/qbf100");
+		TS_QBF tabusearch = new TS_QBF(10, 20000, "instances/qbf100");
 		Solution<Integer> bestSol = tabusearch.solve();
 		System.out.println("maxVal = " + bestSol);
 		long endTime   = System.currentTimeMillis();
