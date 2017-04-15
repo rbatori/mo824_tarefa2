@@ -177,7 +177,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 		} else {
 			TL.add(fake);
 		}
-		//ObjFunction.evaluate(incumbentSol);
+		
 		tlRemovedRandomItens.clear();
 		repair();
 		
@@ -258,7 +258,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	public static void main(String[] args) throws IOException {
 
 		long startTime = System.currentTimeMillis();
-		TS_QBF tabusearch = new TS_QBF(15, 15000, "instances/qbf020");
+		TS_QBF tabusearch = new TS_QBF(15, 15000, "instances/qbf100");
 		Solution<Integer> bestSol = tabusearch.solve();
 		System.out.println("maxVal = " + bestSol);
 		long endTime   = System.currentTimeMillis();
