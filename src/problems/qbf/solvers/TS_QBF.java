@@ -25,6 +25,10 @@ public class TS_QBF extends AbstractTS<Integer> {
 	
 	private final Integer fake = new Integer(-1);
 	
+	private static final int INTERATIONS_TO_START_INTENSIFICATION = 800;
+	
+	private static final int INTERATIONS_OF_INTENSIFICATION = 400;
+	
 	private ArrayDeque<Integer> tlRemovedRandomItens;
 	
 	private Map<Integer, Integer> instensificationByRestartCounter;
@@ -44,7 +48,8 @@ public class TS_QBF extends AbstractTS<Integer> {
 	 *             necessary for I/O operations.
 	 */
 	public TS_QBF(Integer tenure, Integer iterations, String filename) throws IOException {
-		super(new QBF_Inverse(filename), tenure, iterations);
+		super(new QBF_Inverse(filename), tenure, iterations
+		        ,INTERATIONS_TO_START_INTENSIFICATION, INTERATIONS_OF_INTENSIFICATION);
 		tlRemovedRandomItens = new ArrayDeque<>();
 		instensificationByRestartCounter = new HashMap<>();
 	}
@@ -199,6 +204,10 @@ public class TS_QBF extends AbstractTS<Integer> {
 	            instensificationByRestartCounter.put(element.intValue(), elementCount.intValue() + 1);
 	        }
 	    }
+	}
+	
+	public void resetIntensificationByRestartCounter() {
+	    this.instensificationByRestartCounter.clear();
 	}
 
 	private boolean evaluationAllowed(Integer candidate, Double deltaCost) {
