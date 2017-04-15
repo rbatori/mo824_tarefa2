@@ -35,8 +35,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	
 	private static final int INTERATIONS_OF_INTENSIFICATION = 400;
 	
-	private static final int MAX_PERCENTAGE_FIXED_ITENS = 20;
-	private static final int MIN_PERCENTAGE_FIXED_ITENS = 5;
+	private static final int PERCENTAGE_FIXED_ITENS = 20;
 	
 	private enum OperationNeighborhood {INSERT, REMOVE, EXCHANGE};
 	
@@ -248,8 +247,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	}
 	
 	private int computeNumberFixedElements() {
-	    int percentageFixedElements = rng.nextInt(MAX_PERCENTAGE_FIXED_ITENS - MIN_PERCENTAGE_FIXED_ITENS) + MIN_PERCENTAGE_FIXED_ITENS;
-	    return (int) Math.round(intensificationByRestartCounter.size() * ((double)percentageFixedElements/100));
+	    return (int) Math.round(intensificationByRestartCounter.size() * ((double)PERCENTAGE_FIXED_ITENS/100));
 	}
 
 	private boolean evaluationAllowed(Integer candidate, Double deltaCost, OperationNeighborhood operation) {
@@ -332,7 +330,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	public static void main(String[] args) throws IOException {
 
 		long startTime = System.currentTimeMillis();
-		TS_QBF tabusearch = new TS_QBF(10, 15000, "instances/qbf080");
+		TS_QBF tabusearch = new TS_QBF(10, 15000, "instances/qbf020");
 		Solution<Integer> bestSol = tabusearch.solve();
 		System.out.println("maxVal = " + bestSol);
 		long endTime   = System.currentTimeMillis();
