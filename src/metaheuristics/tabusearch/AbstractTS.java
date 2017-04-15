@@ -131,6 +131,8 @@ public abstract class AbstractTS<E> {
 	 * @return An local optimum solution.
 	 */
 	public abstract Solution<E> neighborhoodMove();
+	
+	public abstract void updateIntensificationByRestartCounter();
 
 	/**
 	 * Constructor for the AbstractTS class.
@@ -224,6 +226,7 @@ public abstract class AbstractTS<E> {
 				if (verbose)
 					System.out.println("(Iter. " + i + ") BestSol = " + bestSol);
 			}
+			updateIntensificationByRestartCounter();
 		}
 
 		return bestSol;

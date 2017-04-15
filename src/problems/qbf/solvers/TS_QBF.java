@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 import metaheuristics.tabusearch.AbstractTS;
 import problems.qbf.QBF_Inverse;
@@ -24,6 +26,8 @@ public class TS_QBF extends AbstractTS<Integer> {
 	private final Integer fake = new Integer(-1);
 	
 	private ArrayDeque<Integer> tlRemovedRandomItens;
+	
+	private Map<Integer, Integer> instensificationByRestartCounter;
 
 	/**
 	 * Constructor for the TS_QBF class. An inverse QBF objective function is
@@ -42,6 +46,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	public TS_QBF(Integer tenure, Integer iterations, String filename) throws IOException {
 		super(new QBF_Inverse(filename), tenure, iterations);
 		tlRemovedRandomItens = new ArrayDeque<>();
+		instensificationByRestartCounter = new HashMap<>();
 	}
 
 	/* (non-Javadoc)
@@ -177,11 +182,23 @@ public class TS_QBF extends AbstractTS<Integer> {
 		} else {
 			TL.add(fake);
 		}
-		//ObjFunction.evaluate(incumbentSol);
+		
 		tlRemovedRandomItens.clear();
 		repair();
 		
 		return null;
+	}
+	
+	public void updateIntensificationByRestartCounter() {
+	    for(Integer element : bestSol) {
+	        Integer elementCount = instensificationByRestartCounter.get(element.intValue());
+	        
+	        if(elementCount == null) {
+	            instensificationByRestartCounter.put(element.intValue(), 1);
+	        } else {
+	            instensificationByRestartCounter.put(element.intValue(), elementCount.intValue() + 1);
+	        }
+	    }
 	}
 
 	private boolean evaluationAllowed(Integer candidate, Double deltaCost) {
@@ -258,7 +275,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	public static void main(String[] args) throws IOException {
 
 		long startTime = System.currentTimeMillis();
-		TS_QBF tabusearch = new TS_QBF(10, 10000, "instances/qbf060");
+		TS_QBF tabusearch = new TS_QBF(10, 10000, "instances/qbf100");
 		Solution<Integer> bestSol = tabusearch.solve();
 		System.out.println("maxVal = " + bestSol);
 		long endTime   = System.currentTimeMillis();
