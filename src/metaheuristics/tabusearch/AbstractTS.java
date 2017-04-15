@@ -147,6 +147,8 @@ public abstract class AbstractTS<E> {
 	public abstract void updateIntensificationByRestartCounter();
 	
 	public abstract void resetIntensificationByRestartCounter();
+	
+	public abstract void setFixedComponentsIntensification();
 
 	/**
 	 * Constructor for the AbstractTS class.
@@ -258,6 +260,7 @@ public abstract class AbstractTS<E> {
 			    //start intensification process
 			    statusIntensificationProcess = STATUS.ACTIVE;
 			    countIterationsStartIntensification = 0;
+			    setFixedComponentsIntensification();
 			}
 			
 			if(countIterationsOfIntensification == numberOfIterationsOfIntensification) {

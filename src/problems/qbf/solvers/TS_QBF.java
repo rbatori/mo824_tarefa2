@@ -3,9 +3,15 @@ package problems.qbf.solvers;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import metaheuristics.tabusearch.AbstractTS;
 import problems.qbf.QBF_Inverse;
@@ -29,9 +35,13 @@ public class TS_QBF extends AbstractTS<Integer> {
 	
 	private static final int INTERATIONS_OF_INTENSIFICATION = 400;
 	
+	private static final int PERCENTAGE_FIXED_ITENS = 25;
+	
 	private ArrayDeque<Integer> tlRemovedRandomItens;
 	
-	private Map<Integer, Integer> instensificationByRestartCounter;
+	private Map<Integer, Integer> intensificationByRestartCounter;
+	
+	private Set<Integer> fixedVariablesIntensification;
 
 	/**
 	 * Constructor for the TS_QBF class. An inverse QBF objective function is
@@ -51,7 +61,8 @@ public class TS_QBF extends AbstractTS<Integer> {
 		super(new QBF_Inverse(filename), tenure, iterations
 		        ,INTERATIONS_TO_START_INTENSIFICATION, INTERATIONS_OF_INTENSIFICATION);
 		tlRemovedRandomItens = new ArrayDeque<>();
-		instensificationByRestartCounter = new HashMap<>();
+		intensificationByRestartCounter = new HashMap<>();
+		fixedVariablesIntensification = new HashSet<>();
 	}
 
 	/* (non-Javadoc)
@@ -196,18 +207,45 @@ public class TS_QBF extends AbstractTS<Integer> {
 	
 	public void updateIntensificationByRestartCounter() {
 	    for(Integer element : bestSol) {
-	        Integer elementCount = instensificationByRestartCounter.get(element.intValue());
+	        Integer elementCount = intensificationByRestartCounter.get(element.intValue());
 	        
 	        if(elementCount == null) {
-	            instensificationByRestartCounter.put(element.intValue(), 1);
+	            intensificationByRestartCounter.put(element.intValue(), 1);
 	        } else {
-	            instensificationByRestartCounter.put(element.intValue(), elementCount.intValue() + 1);
+	            intensificationByRestartCounter.put(element.intValue(), elementCount.intValue() + 1);
 	        }
 	    }
 	}
 	
 	public void resetIntensificationByRestartCounter() {
-	    this.instensificationByRestartCounter.clear();
+	    this.intensificationByRestartCounter.clear();
+	}
+	
+	public void setFixedComponentsIntensification() {
+	    fixedVariablesIntensification.clear();
+	    int index = 0;
+	    int numberFixedElements = 0;
+	    
+	    Map<Integer, Integer> orderedVariablesOcurrence = intensificationByRestartCounter.entrySet()
+                                        .stream()
+                                        .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
+                                        .collect(Collectors.toMap(
+                                                Map.Entry::getKey, 
+                                                Map.Entry::getValue, 
+                                                (e1, e2) -> e1, 
+                                                LinkedHashMap::new
+                                              ));
+	    
+	    numberFixedElements = computeNumberFixedElements();
+	    Iterator<Integer> iterator = orderedVariablesOcurrence.keySet().iterator();
+	    while(iterator.hasNext() && index < numberFixedElements) {
+	        fixedVariablesIntensification.add(iterator.next());
+	        index++;
+	    }
+	}
+	
+	private int computeNumberFixedElements() {
+	    return (int) Math.round(intensificationByRestartCounter.size() * ((double)PERCENTAGE_FIXED_ITENS/100));
 	}
 
 	private boolean evaluationAllowed(Integer candidate, Double deltaCost) {
