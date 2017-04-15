@@ -254,29 +254,33 @@ public abstract class AbstractTS<E> {
 				if (verbose)
 					System.out.println("(Iter. " + i + ") BestSol = " + bestSol);
 			}
-			if(statusIntensificationProcess == STATUS.DEACTIVE) {
-                countIterationsStartIntensification++;
-                updateIntensificationByRestartCounter();
-            } else {
-                countIterationsOfIntensification++;
-            }
-			
-			if(countIterationsStartIntensification == numberOfIterationsToStartIntensification) {
-			    //start intensification process
-			    statusIntensificationProcess = STATUS.ACTIVE;
-			    countIterationsStartIntensification = 0;
-			    initIntensificationByRestart();
-			}
-			
-			if(countIterationsOfIntensification == numberOfIterationsOfIntensification) {
-                //end intensification process
-                statusIntensificationProcess = STATUS.DEACTIVE;
-                countIterationsOfIntensification = 0;
-                resetIntensificationStructures();
-            }
+			applyIntensificationByRestart();
 		}
 
 		return bestSol;
+	}
+	
+	private void applyIntensificationByRestart() {
+	    if(statusIntensificationProcess == STATUS.DEACTIVE) {
+            countIterationsStartIntensification++;
+            updateIntensificationByRestartCounter();
+        } else {
+            countIterationsOfIntensification++;
+        }
+        
+        if(countIterationsStartIntensification == numberOfIterationsToStartIntensification) {
+            //start intensification process
+            statusIntensificationProcess = STATUS.ACTIVE;
+            countIterationsStartIntensification = 0;
+            initIntensificationByRestart();
+        }
+        
+        if(countIterationsOfIntensification == numberOfIterationsOfIntensification) {
+            //end intensification process
+            statusIntensificationProcess = STATUS.DEACTIVE;
+            countIterationsOfIntensification = 0;
+            resetIntensificationStructures();
+        }
 	}
 
 	/**
