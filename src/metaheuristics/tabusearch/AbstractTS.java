@@ -252,7 +252,8 @@ public abstract class AbstractTS<E> {
 			if (bestSol.cost > incumbentSol.cost) {
 				bestSol = new Solution<E>(incumbentSol);
 				if (verbose)
-					System.out.println("(Iter. " + i + ") BestSol = " + bestSol);
+					System.out.println((statusIntensificationProcess == STATUS.ACTIVE ? "INTENSIFICATION - " : "") 
+				    + "(Iter. " + i + ") BestSol = " + bestSol);
 			}
 			applyIntensificationByRestart();
 		}
