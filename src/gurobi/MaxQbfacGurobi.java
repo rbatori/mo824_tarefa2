@@ -20,8 +20,8 @@ public class MaxQbfacGurobi {
       int totalVar = _size * _size;
       GRBVar[] variaveis = new GRBVar[totalVar];
       for (int i = 0; i < _size; ++i) {
-        for(int j=i; j<_size; j++){          
-            model.addVar(0, 1, A[i][j], GRB.BINARY, "X_" + i+ "_"+j);
+        for(int j=0; j<_size; j++){          
+            model.addVar(0, 1, A[i][j], GRB.BINARY, "X_" + i+ "X_"+j);
          
         }
       }
