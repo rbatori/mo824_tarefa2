@@ -269,7 +269,7 @@ public class TS_QBFAC_IntensificationByRestart extends AbstractTS<Integer> {
 		long endTime   = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
 		System.out.println("Time = "+(double)totalTime/(double)1000+" seg");
-
+ 
 	}
 
 }
