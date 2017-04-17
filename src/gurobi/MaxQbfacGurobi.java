@@ -1,3 +1,4 @@
+/*
 package gurobi;
 import gurobi.*;
 import java.io.BufferedReader;
@@ -9,7 +10,6 @@ public class MaxQbfacGurobi {
   private static int _size;  
   private static Double A[][];  
   public static void main(String[] args) {
-
 
     try {
       readInput("instances/qbf020");
@@ -88,3 +88,4 @@ public class MaxQbfacGurobi {
 
 	}
 }
+*/

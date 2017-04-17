@@ -3,10 +3,23 @@ package problems.qbf.solvers;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import metaheuristics.tabusearch.AbstractTS;
 import problems.qbf.QBF_Inverse;
 import solutions.Solution;
+
+
 
 /**
  * Metaheuristic TS (Tabu Search) for obtaining an optimal solution to a QBF
@@ -16,7 +29,9 @@ import solutions.Solution;
  * 
  * @author ccavellucci, fusberti
  */
-public class TS_QBF extends AbstractTS<Integer> {
+public class TS_QBFAC_IntensificationByRestart extends AbstractTS<Integer> {
+	
+	private Map<Integer,Integer> Elite; // Map <element, number of consecutive iterations>
 	
 	private final Integer fake = new Integer(-1);
 
@@ -31,11 +46,12 @@ public class TS_QBF extends AbstractTS<Integer> {
 	 * @param filename
 	 *            Name of the file for which the objective function parameters
 	 *            should be read.
+	 * @param eliteSize 
 	 * @throws IOException
 	 *             necessary for I/O operations.
 	 */
-	public TS_QBF(Integer tenure, Integer iterations, String filename,  Double iterationsRestart) throws IOException {
-		super(new QBF_Inverse(filename), tenure, iterations, iterationsRestart, 0.00);
+	public TS_QBFAC_IntensificationByRestart(Integer tenure, Integer iterations, String filename,  Double restartFrequence, double eliteSize) throws IOException {
+		super(new QBF_Inverse(filename), tenure, iterations, restartFrequence, eliteSize);
 	}
 
 	/* (non-Javadoc)
@@ -61,9 +77,59 @@ public class TS_QBF extends AbstractTS<Integer> {
 	public ArrayList<Integer> makeRCL() {
 
 		ArrayList<Integer> _RCL = new ArrayList<Integer>();
-
 		return _RCL;
 
+	}
+	
+	@Override
+	public void restartByIntensification() {
+
+		if (Elite.size() < eliteSize/ObjFunction.getDomainSize()) return;
+		
+		Map<Integer,Integer> elite = new HashMap<Integer,Integer>(Elite);		
+		incumbentSol = createEmptySol();
+		
+		SortedSet<Integer> values = new TreeSet<Integer>(elite.values());
+		Map<Integer,Integer> Copy = new HashMap<Integer, Integer>(elite);
+		for (int i = values.size() - 1; i > 0 && bestSol.size() < eliteSize/ObjFunction.getDomainSize(); i--) {
+			for (Map.Entry<Integer, Integer> e : Copy.entrySet()) {
+				if (e.getValue() == values.toArray()[i]) {
+					incumbentSol.add(e.getKey());
+					elite.remove(e.getKey());
+				}
+			}
+		}
+		ObjFunction.evaluate(incumbentSol);
+		if (bestSol.cost > incumbentSol.cost) {
+			
+			bestSol = new Solution<Integer>(incumbentSol);		
+			if (verbose)
+				System.out.println("RestartSol = " + bestSol);
+		}
+		
+		updateCL();
+
+		for (int i = 0; i <  restartFrequence * iterations; i++) {
+			neighborhoodMove();
+			if (bestSol.cost > incumbentSol.cost) {
+				bestSol = new Solution<Integer>(incumbentSol);
+				if (verbose)
+					System.out.println("(RestartSol. " + i + ") BestSol = " + bestSol);
+			}
+		}
+			
+	}
+	
+	@Override
+	public void updateElite() {
+		
+		for (Integer I:bestSol) {
+			if (Elite.containsKey(I))
+				Elite.put(I, Elite.get(I) + 1);
+			else
+				Elite.put(I, 1);
+		}
+		
 	}
 	
 	/* (non-Javadoc)
@@ -86,9 +152,17 @@ public class TS_QBF extends AbstractTS<Integer> {
 	 */
 	@Override
 	public void updateCL() {
-
-		// do nothing
-
+		
+		// remove adjacent elements	
+		CL = makeCL();
+		for (Integer I : incumbentSol) {
+			if (CL.indexOf(I + 1) > -1)
+				CL.remove(CL.indexOf(I + 1));
+			if (CL.indexOf(I) > -1)
+				CL.remove(CL.indexOf(I));
+			if (CL.indexOf(I - 1) > -1)
+				CL.remove(CL.indexOf(I - 1));
+		}
 	}
 
 	/**
@@ -100,6 +174,7 @@ public class TS_QBF extends AbstractTS<Integer> {
 	 */
 	@Override
 	public Solution<Integer> createEmptySol() {
+		Elite = new HashMap<Integer, Integer>();
 		Solution<Integer> sol = new Solution<Integer>();
 		sol.cost = 0.0;
 		return sol;
@@ -182,26 +257,19 @@ public class TS_QBF extends AbstractTS<Integer> {
 	 */
 	public static void main(String[] args) throws IOException {
 
+		//080 -> best result=592 restartFrequence=0.20 eliteSize=0.10
+		//010 -> best result=857
+		
 		long startTime = System.currentTimeMillis();
-		TS_QBF tabusearch = new TS_QBF(2, 10000, "instances/qbf020", 0.00);
+		double restartFrequence = 0.20; // restartFrequence >= 1 do not restart
+		double eliteSize = 0.10; //percent of size of variables  
+		TS_QBFAC_IntensificationByRestart tabusearch = new TS_QBFAC_IntensificationByRestart(20, 10000, "instances/qbf100", restartFrequence, eliteSize);
 		Solution<Integer> bestSol = tabusearch.solve();
 		System.out.println("maxVal = " + bestSol);
 		long endTime   = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
 		System.out.println("Time = "+(double)totalTime/(double)1000+" seg");
 
-	}
-
-	@Override
-	public void updateElite() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void restartByIntensification() {
-		// TODO Auto-generated method stub
-		
 	}
 
 }

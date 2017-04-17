@@ -5,7 +5,15 @@ package metaheuristics.tabusearch;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Random;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
 
 import problems.Evaluator;
 import solutions.Solution;
@@ -61,6 +69,11 @@ public abstract class AbstractTS<E> {
 	protected Integer iterations;
 	
 	/**
+	 * the percentual of iterations to intensification restart 
+	 */
+	protected Double restartFrequence;
+	
+	/**
 	 * the tabu tenure.
 	 */
 	protected Integer tenure;
@@ -79,6 +92,10 @@ public abstract class AbstractTS<E> {
 	 * the Tabu List of elements to enter the solution.
 	 */
 	protected ArrayDeque<E> TL;
+
+	protected double eliteSize;
+
+	public abstract void updateElite();	
 
 	/**
 	 * Creates the Candidate List, which is an ArrayList of candidate elements
@@ -141,11 +158,14 @@ public abstract class AbstractTS<E> {
 	 *            The Tabu tenure parameter. 
 	 * @param iterations
 	 *            The number of iterations which the TS will be executed.
+	 * @param eliteSize 
 	 */
-	public AbstractTS(Evaluator<E> objFunction, Integer tenure, Integer iterations) {
+	public AbstractTS(Evaluator<E> objFunction, Integer tenure, Integer iterations, Double restartFrequence, double eliteSize) {
 		this.ObjFunction = objFunction;
 		this.tenure = tenure;
 		this.iterations = iterations;
+		this.restartFrequence = restartFrequence;
+		this.eliteSize = eliteSize;
 	}
 
 	/**
@@ -204,7 +224,9 @@ public abstract class AbstractTS<E> {
 
 		return incumbentSol;
 	}
-
+	
+	public abstract void restartByIntensification();
+	
 	/**
 	 * The TS mainframe. It consists of a constructive heuristic followed by
 	 * a loop, in which each iteration a neighborhood move is performed on
@@ -217,13 +239,22 @@ public abstract class AbstractTS<E> {
 		bestSol = createEmptySol();
 		constructiveHeuristic();
 		TL = makeTL();
+		
+		int iForRestart = 0;
 		for (int i = 0; i < iterations; i++) {
 			neighborhoodMove();
 			if (bestSol.cost > incumbentSol.cost) {
 				bestSol = new Solution<E>(incumbentSol);
+				updateElite();
 				if (verbose)
 					System.out.println("(Iter. " + i + ") BestSol = " + bestSol);
 			}
+			if ((double)iForRestart/iterations >= restartFrequence)
+			{
+				restartByIntensification();
+				iForRestart = 0;
+			}
+			iForRestart++;
 		}
 
 		return bestSol;
